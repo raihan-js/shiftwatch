@@ -60,10 +60,10 @@ def main() -> None:
     # out-of-scope contamination, only where an OOS pool exists
     if oos_pool:
         for ratio in (0.1, 0.2, 0.3, 0.4):
-            mixed, _gold = mix_out_of_scope(texts, oos_pool, ratio, seed=SEED)
+            mixed, replaced_idx = mix_out_of_scope(texts, oos_pool, ratio, seed=SEED)
             gold: list[str | None] = []
-            for t, orig in zip(mixed, labels):
-                gold.append("oos" if t in oos_pool else orig)
+            for i, orig in enumerate(labels):
+                gold.append("oos" if i in replaced_idx else orig)
             emit(f"oos{int(ratio * 100)}", mixed, None, gold)
 
     slices = sorted(p.stem for p in ladder.glob(f"{args.dataset}_*.jsonl"))

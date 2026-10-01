@@ -38,6 +38,14 @@ class TestContract:
         out = est.estimate(tl)
         assert 0.0 <= out <= 1.0
 
+    @pytest.mark.parametrize("name", list(ESTIMATORS))
+    def test_estimate_takes_no_labels(self, name):
+        """The label-free contract: estimate() signature has no label argument."""
+        import inspect
+        sig = inspect.signature(ESTIMATORS[name].estimate)
+        assert "labels" not in sig.parameters
+        assert "target_logits" in sig.parameters
+
     def test_base_class_is_abstract(self):
         from shiftwatch.estimators import Estimator
         with pytest.raises(NotImplementedError):
@@ -167,3 +175,14 @@ class TestBuildAll:
         sl, lab = make_logits()
         tl, _ = make_shifted()
         assert all(0.0 <= v <= 1.0 for v in build_all(sl, lab, tl).values())
+
+    def test_estimates_differ_across_shifts(self):
+        """A good estimator should give different estimates for different shifts."""
+        sl, lab = make_logits(accuracy=0.85)
+        clean, _ = make_logits(n=400, accuracy=0.85, seed=10)
+        shifted, _ = make_logits(n=400, accuracy=0.5, seed=11, overconf=3.0)
+        out_clean = build_all(sl, lab, clean)
+        out_shifted = build_all(sl, lab, shifted)
+        # At least some estimators should discriminate
+        diffs = [abs(out_clean[k] - out_shifted[k]) for k in out_clean]
+        assert max(diffs) > 0.03

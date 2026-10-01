@@ -69,23 +69,26 @@ class TestStyle:
 
 class TestOutOfScope:
     def test_zero_ratio_injects_nothing(self):
-        texts, gold = mix_out_of_scope(["a", "b", "c"], ["x"], 0.0)
+        texts, idx = mix_out_of_scope(["a", "b", "c"], ["x"], 0.0)
         assert texts == ["a", "b", "c"]
-        assert gold == [None, None, None]
+        assert idx == set()
 
     def test_ratio_injects_expected_count(self):
-        texts, gold = mix_out_of_scope([f"t{i}" for i in range(100)], ["oos"], 0.4, seed=1)
+        texts, idx = mix_out_of_scope([f"t{i}" for i in range(100)], ["oos"], 0.4, seed=1)
         injected = sum(1 for t in texts if t == "oos")
         assert injected == 40
+        assert len(idx) == 40
 
     def test_injection_deterministic(self):
-        a, _ = mix_out_of_scope([f"t{i}" for i in range(50)], ["x", "y"], 0.2, seed=3)
-        b, _ = mix_out_of_scope([f"t{i}" for i in range(50)], ["x", "y"], 0.2, seed=3)
+        a, ia = mix_out_of_scope([f"t{i}" for i in range(50)], ["x", "y"], 0.2, seed=3)
+        b, ib = mix_out_of_scope([f"t{i}" for i in range(50)], ["x", "y"], 0.2, seed=3)
         assert a == b
+        assert ia == ib
 
     def test_ratio_one_replaces_everything(self):
-        texts, _ = mix_out_of_scope(["a", "b"], ["oos"], 1.0)
+        texts, idx = mix_out_of_scope(["a", "b"], ["oos"], 1.0)
         assert texts == ["oos", "oos"]
+        assert idx == {0, 1}
 
 
 class TestApplyShift:

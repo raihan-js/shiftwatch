@@ -82,9 +82,6 @@ def main() -> None:
         hold = [json.loads(l) for l in
                 open(Path("data/holdback") / f"{args.dataset}_{slice_id}.jsonl")]
         logits = np.load(RESULTS / f"{args.dataset}_{slice_id}_logits.npz")["logits"]
-        label_names = json.loads(
-            (Path("data/source") / f"{args.dataset}_meta.json").read_text())
-        n_classes = label_names["n_classes"]
         label_to_id = model.config.label2id
         gold = np.array([label_to_id[h["label"]] for h in hold])
         results.append(SliceResult(

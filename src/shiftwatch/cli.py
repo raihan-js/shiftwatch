@@ -61,7 +61,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
         print(f"{slice_id:12s} est={rows[-1]['estimated']:.3f} "
               f"drop={rows[-1]['estimated_drop']:+.3f} "
               f"alert={'YES' if rows[-1]['alerting'] else 'no'}", flush=True)
-    Path("data/results") .mkdir(exist_ok=True)
+    Path("data/results").mkdir(exist_ok=True)
     (Path("data/results") / f"{args.dataset}_replay.json").write_text(json.dumps(rows, indent=2))
     return 0
 

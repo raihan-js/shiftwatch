@@ -21,13 +21,14 @@ SEED = 0
 
 
 def load_dataset_splits(name: str):
+    """Returns (train, test, text_col, train_label_col, string_label_col)."""
     from datasets import load_dataset
     if name == "banking77":
-        ds = load_dataset("PolyAI/banking77")
-        return ds["train"], ds["test"], "text", "label"
+        ds = load_dataset("mteb/banking77")
+        return ds["train"], ds["test"], "text", "label", "label_text"
     if name == "clinc150":
-        ds = load_dataset("clinc_oos_plus", "plus")
-        return ds["train"], ds["test"], "text", "label"
+        ds = load_dataset("clinc/clinc_oos", "plus")
+        return ds["train"], ds["test"], "text", "intent", "intent"
     raise ValueError(name)
 
 
@@ -50,9 +51,16 @@ def main() -> None:
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    train_ds, test_ds, text_col, label_col = load_dataset_splits(args.dataset)
-    id2label = {i: train_ds.features[label_col].names[i]
-                for i in range(len(train_ds.features[label_col].names))}
+    train_ds, test_ds, text_col, train_label_col, string_label_col = load_dataset_splits(args.dataset)
+    if hasattr(train_ds.features[train_label_col], "names"):
+        label_names = list(train_ds.features[train_label_col].names)
+    elif hasattr(train_ds.features[string_label_col], "names"):
+        label_names = list(train_ds.features[string_label_col].names)
+    else:
+        # banking77: build mapping from (int label, string label) pairs
+        pairs = sorted(set(zip(train_ds[train_label_col], train_ds[string_label_col])))
+        label_names = [s for _, s in pairs]
+    id2label = {i: label_names[i] for i in range(len(label_names))}
     n_classes = len(id2label)
     print(f"{args.dataset}: {len(train_ds)} train / {len(test_ds)} test / {n_classes} classes",
           flush=True)
@@ -62,7 +70,9 @@ def main() -> None:
         MODEL, num_labels=n_classes, id2label=id2label, label2id={v: k for k, v in id2label.items()})
 
     def tokenize(batch):
-        return tok(batch[text_col], truncation=True, max_length=args.max_len)
+        result = tok(batch[text_col], truncation=True, max_length=args.max_len)
+        result["labels"] = batch[train_label_col]
+        return result
 
     train_tok = train_ds.map(tokenize, batched=True)
     eval_tok = test_ds.map(tokenize, batched=True)
@@ -103,7 +113,7 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     loader = DataLoader(eval_tok, batch_size=64, collate_fn=DataCollatorWithPadding(tok))
-    all_logits, all_labels, all_texts = [], [], []
+    all_logits, all_labels = [], []
     with torch.no_grad():
         for batch in loader:
             labels = batch.pop("labels")
@@ -115,13 +125,19 @@ def main() -> None:
     labels = np.concatenate(all_labels)
     acc = float((logits.argmax(axis=1) == labels).mean())
 
+    # String labels for the holdback: decode from the original dataset.
+    if hasattr(test_ds.features[string_label_col], "names"):
+        str_labels = [test_ds.features[string_label_col].names[int(l)] for l in labels]
+    else:
+        str_labels = [test_ds[i][string_label_col] for i in range(len(labels))]
+
     out = DATA_DIR / "source"
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / f"{args.dataset}_clean.npz", logits=logits, labels=labels)
     with open(out / f"{args.dataset}_clean_texts.jsonl", "w") as f:
         for i, row in enumerate(eval_tok):
             f.write(json.dumps({"idx": i, "text": row[text_col],
-                                "label": id2label[int(labels[i])]}) + "\n")
+                                "label": str_labels[i]}) + "\n")
 
     meta = {"dataset": args.dataset, "base_model": MODEL, "n_classes": n_classes,
             "n_eval": int(len(labels)), "clean_accuracy": acc,

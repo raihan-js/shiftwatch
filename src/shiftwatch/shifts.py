@@ -120,21 +120,21 @@ def style_shift(text: str, severity: int, seed: int = 0) -> str:
 
 
 def mix_out_of_scope(texts: list[str], oos_texts: list[str], ratio: float,
-                     seed: int = 0) -> tuple[list[str], list[str | None]]:
+                     seed: int = 0) -> tuple[list[str], set[int]]:
     """Replace a `ratio` share of in-scope texts with out-of-scope ones.
 
-    Returns (texts, gold) where gold[i] is None for an injected OOS item.
+    Returns (texts, replaced_indices) where replaced_indices are the positions
+    that now hold an OOS text.
     """
     if ratio <= 0:
-        return list(texts), [None] * len(texts)
+        return list(texts), set()
     rng = random.Random(f"oos:{seed}:{ratio}")
     n_inject = int(round(len(texts) * ratio))
-    idx = rng.sample(range(len(texts)), min(n_inject, len(texts)))
+    idx = set(rng.sample(range(len(texts)), min(n_inject, len(texts))))
     out = list(texts)
-    gold: list[str | None] = [None] * len(texts)
     for j, i in enumerate(sorted(idx)):
         out[i] = oos_texts[(j + seed) % len(oos_texts)]
-    return out, gold
+    return out, idx
 
 
 # Ladder definition: (shift_name, severity_label, callable)

@@ -44,6 +44,15 @@ A small FastAPI service that:
 
 See `data/results/` for the benchmark table. Key finding: [TBD after run].
 
+## Estimator notes
+
+- **Mean confidence** is optimistic under confident-wrong shifts.
+- **Temperature scaling** calibrates on source but may not transfer under shift.
+- **DoC** captures confidence degradation but assumes source accuracy is known.
+- **CBPE** captures class distribution shift but not confidence degradation.
+- **NLL** is similar to temperature scaling but uses log-probabilities.
+- **Error predictor** learns from source features but may not transfer under shift.
+
 ## Usage
 
 ```bash
