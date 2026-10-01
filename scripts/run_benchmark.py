@@ -59,6 +59,8 @@ def main() -> None:
     ladder_files = sorted(Path("data/ladder").glob(f"{args.dataset}_*.jsonl"))
     print(f"{len(ladder_files)} slices", flush=True)
 
+    RESULTS.mkdir(parents=True, exist_ok=True)
+
     # --- step 1+2: estimate every slice, labels untouched ---
     estimates_by_slice = {}
     for path in ladder_files:
@@ -71,7 +73,6 @@ def main() -> None:
               flush=True)
         np.savez(RESULTS / f"{args.dataset}_{slice_id}_logits.npz", logits=logits)
 
-    RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / f"{args.dataset}_estimates.json").write_text(json.dumps(estimates_by_slice, indent=2))
     print("estimates written before any label was read", flush=True)
 

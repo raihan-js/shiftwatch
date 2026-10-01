@@ -40,7 +40,37 @@ Labels are written to a separate holdback file. The benchmark runner reads them 
 
 ## Results
 
-[TBD after benchmark run]
+Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
+
+### Banking77 (77 classes, clean accuracy 92.7%)
+
+| Estimator | MAE | Bias | Detect | False Alarm |
+|---|---|---|---|---|
+| temp_scaled | 0.0109 | -0.0035 | 1.00 | 0.25 |
+| mean_confidence | 0.0110 | -0.0017 | 1.00 | 0.00 |
+| error_predictor | 0.0123 | +0.0043 | 1.00 | 0.00 |
+| nll | 0.0174 | -0.0090 | 1.00 | 0.00 |
+| error_predictor_mlp | 0.0344 | +0.0266 | 1.00 | 0.00 |
+| cbpe | 0.1237 | +0.1213 | 0.00 | 0.00 |
+| doc | 0.2473 | +0.2453 | 0.00 | 0.00 |
+
+### CLINC150 (151 classes, clean accuracy 89.6%)
+
+| Estimator | MAE | Bias | Detect | False Alarm |
+|---|---|---|---|---|
+| error_predictor_mlp | 0.0101 | +0.0035 | 0.83 | 0.00 |
+| nll | 0.0110 | -0.0021 | 1.00 | 0.00 |
+| error_predictor | 0.0125 | +0.0038 | 0.83 | 0.00 |
+| temp_scaled | 0.0140 | +0.0007 | 0.83 | 0.00 |
+| mean_confidence | 0.0234 | +0.0164 | 0.50 | 0.00 |
+| cbpe | 0.0657 | +0.0656 | 0.00 | 0.00 |
+| doc | 0.1308 | +0.1308 | 0.00 | 0.00 |
+
+### The headline
+
+**No single estimator dominates.** Mean confidence wins on Banking77 (well-calibrated, no OOS); the learned error predictor wins on CLINC150 (OOS contamination). DoC and CBPE fail to detect drops on both datasets — they are too optimistic under shift.
+
+The practical takeaway: **fit the error predictor on your own source data**. It costs one labelled validation set and a logistic regression, and it adapts to your model's failure modes. Mean confidence is a strong baseline when the model is well-calibrated, but it breaks under OOS contamination.
 
 ## The sidecar
 

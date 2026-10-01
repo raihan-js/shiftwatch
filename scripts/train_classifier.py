@@ -78,7 +78,23 @@ def main() -> None:
     eval_tok = test_ds.map(tokenize, batched=True)
     if args.max_train:
         train_tok = train_tok.select(range(min(args.max_train, len(train_tok))))
-    eval_tok = eval_tok.select(range(min(args.max_eval, len(eval_tok))))
+    # Shuffle before sampling so OOS classes (clustered at the end) are represented.
+    eval_tok = eval_tok.shuffle(seed=SEED).select(range(min(args.max_eval, len(eval_tok))))
+
+    # Remove original columns so the collator only sees tokenized features.
+    keep = {"input_ids", "attention_mask", "token_type_ids", "labels"}
+    drop = [c for c in train_tok.column_names if c not in keep]
+    train_tok = train_tok.remove_columns(drop)
+
+    # Extract texts and string labels from the shuffled eval set before dropping
+    # the text column (the collator cannot pad raw strings).
+    eval_texts = eval_tok[text_col]
+    if hasattr(eval_tok.features[string_label_col], "names"):
+        eval_str_labels = [eval_tok.features[string_label_col].names[int(l)]
+                           for l in eval_tok[train_label_col]]
+    else:
+        eval_str_labels = eval_tok[string_label_col]
+    eval_tok = eval_tok.remove_columns([c for c in eval_tok.column_names if c not in keep])
 
     model_dir = DATA_DIR / "models" / f"modernbert-{args.dataset}"
     trainer = Trainer(
@@ -125,18 +141,15 @@ def main() -> None:
     labels = np.concatenate(all_labels)
     acc = float((logits.argmax(axis=1) == labels).mean())
 
-    # String labels for the holdback: decode from the original dataset.
-    if hasattr(test_ds.features[string_label_col], "names"):
-        str_labels = [test_ds.features[string_label_col].names[int(l)] for l in labels]
-    else:
-        str_labels = [test_ds[i][string_label_col] for i in range(len(labels))]
+    # String labels for the holdback: use the extracted shuffled labels.
+    str_labels = eval_str_labels[:len(labels)]
 
     out = DATA_DIR / "source"
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / f"{args.dataset}_clean.npz", logits=logits, labels=labels)
     with open(out / f"{args.dataset}_clean_texts.jsonl", "w") as f:
-        for i, row in enumerate(eval_tok):
-            f.write(json.dumps({"idx": i, "text": row[text_col],
+        for i in range(len(labels)):
+            f.write(json.dumps({"idx": i, "text": eval_texts[i],
                                 "label": str_labels[i]}) + "\n")
 
     meta = {"dataset": args.dataset, "base_model": MODEL, "n_classes": n_classes,
