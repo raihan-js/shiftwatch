@@ -1,3 +1,5 @@
+![shiftwatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/main/images/shiftwatch.png)
+
 # How Accurate Is Your Model Right Now? Estimating Accuracy Without Labels
 
 *Label-free accuracy estimation under data shift — and the monitoring sidecar that uses it.*
@@ -5,6 +7,8 @@
 ---
 
 > Scope note: two intent-classification datasets (Banking77, CLINC150), one ModernBERT-base classifier each, rule-based shift ladder. No vision, no NLU, no frontier models.
+
+![ShiftWatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/main/images/shiftwatch.png)
 
 ## The problem
 
