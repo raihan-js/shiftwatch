@@ -66,7 +66,10 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return 0
 
 
-def main() -> int:
+DEFAULT_ESTIMATOR = "nll"
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="shiftwatch")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -76,7 +79,7 @@ def main() -> int:
 
     s = sub.add_parser("serve", help="run the monitoring sidecar")
     s.add_argument("--dataset", default="clinc150")
-    s.add_argument("--estimator", default="error_predictor")
+    s.add_argument("--estimator", default=DEFAULT_ESTIMATOR)
     s.add_argument("--window", type=int, default=500)
     s.add_argument("--threshold", type=float, default=0.05)
     s.add_argument("--host", default="127.0.0.1")
@@ -85,13 +88,17 @@ def main() -> int:
 
     r = sub.add_parser("replay", help="stream ladder slices through the estimator")
     r.add_argument("--dataset", default="clinc150")
-    r.add_argument("--estimator", default="error_predictor")
+    r.add_argument("--estimator", default=DEFAULT_ESTIMATOR)
     r.add_argument("--slices", nargs="*", default=None)
     r.add_argument("--window", type=int, default=500)
     r.add_argument("--threshold", type=float, default=0.05)
     r.set_defaults(func=cmd_replay)
 
-    args = ap.parse_args()
+    return ap
+
+
+def main() -> int:
+    args = build_parser().parse_args()
     return args.func(args)
 
 

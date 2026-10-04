@@ -87,7 +87,7 @@ shiftwatch serve --dataset clinc150 --estimator cbpe
 
 ## Current status
 
-- 89 tests passing
+- 99 tests passing; sidecar/CLI default estimator is `nll` (best Detect then fewest False Alarms on both datasets)
 - Shift ladder: 9 lexical/style shifts + 4 OOS ratios per dataset
 - Estimators: 6 implemented (mean confidence, temp scaling, DoC, CBPE, NLL, error predictor)
 - Sidecar: FastAPI + Prometheus, rolling window, alert flag

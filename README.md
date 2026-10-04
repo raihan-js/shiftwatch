@@ -100,10 +100,10 @@ PYTHONPATH=src python scripts/build_ladder.py --dataset banking77
 PYTHONPATH=src python scripts/run_benchmark.py --dataset banking77
 
 # Serve
-shiftwatch serve --dataset clinc150 --estimator error_predictor
+shiftwatch serve --dataset clinc150            # defaults to --estimator nll
 ```
 
-The sidecar defaults to `error_predictor`: top three on both datasets with no false alarms. (An earlier default, `cbpe`, never detected a drop in this benchmark.)
+The sidecar defaults to `nll`. The rule behind it (suggested by Pawel, @pawel_nowak, in a comment on the write-up): an alert that cries wolf gets muted, so pick the estimator with the best Detect rate first and the fewest False Alarms second, and treat MAE as the tiebreaker. On Banking77 four estimators tie at 1.00 Detect with zero False Alarms; on CLINC150 only `nll` reaches 1.00 Detect with zero False Alarms. The cost is accuracy of the estimate itself: on Banking77 `nll` has MAE 0.0174 against 0.0109 for the best. (Earlier defaults: `cbpe`, which never detected a drop, then `error_predictor`, which missed 1 of 6 drops on CLINC150.) The sidecar still takes `--estimator` for any other. Edge case: if the source validation accuracy is exactly 100%, `nll` has no temperature that matches it and falls back to T=1.
 
 ## Limitations
 

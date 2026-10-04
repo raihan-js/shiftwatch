@@ -2,7 +2,7 @@
 
 This is the deployable half of ShiftWatch. It never sees labels. It keeps a
 rolling window of top-class probabilities and republishes the estimated
-accuracy with the estimator that won the benchmark, plus Prometheus gauges and
+accuracy with the default estimator (NLL), plus Prometheus gauges and
 an alert flag when the estimated drop crosses a threshold.
 """
 

@@ -85,10 +85,14 @@ A small FastAPI service that:
 - Exports Prometheus gauges and an alert flag
 
 ```bash
-shiftwatch serve --dataset clinc150 --estimator error_predictor
+shiftwatch serve --dataset clinc150            # defaults to --estimator nll
 ```
 
-`error_predictor` is the sidecar's default. (It used to default to `cbpe`, which never detected a drop in this benchmark; the benchmark is what caught that.)
+`nll` is the sidecar's default; see the update below for why. (It first defaulted to `cbpe`, which never detected a drop in this benchmark; the benchmark is what caught that.)
+
+## Update (2026-10-05): the sidecar now defaults to NLL
+
+A comment from Pawel (@pawel_nowak) made the point that for a real sidecar a false alarm costs more than a slightly higher MAE, because an alert that cries wolf gets muted. His rule: best Detect rate first, then fewest False Alarms, MAE as the tiebreaker. I re-ran the selection on the tables above. On Banking77 four estimators tie at 1.00 Detect with zero False Alarms (`mean_confidence`, `error_predictor`, `nll`, `error_predictor_mlp`). On CLINC150 only `nll` does; `error_predictor` detects 5 of 6 drops. So the default is now `nll`. The price is a less accurate point estimate on Banking77 (MAE 0.0174 vs 0.0109 for the best estimator). The counts behind these rates are small (6 drop slices per dataset), so treat the ordering as suggestive, not settled.
 
 ## Limitations
 
@@ -99,4 +103,4 @@ shiftwatch serve --dataset clinc150 --estimator error_predictor
 
 ---
 
-*Repo: github.com/raihan-js/shiftwatch · 96 tests green. The estimators are published methods; the contribution is the benchmark and the honest testbed.*
+*Repo: github.com/raihan-js/shiftwatch · 99 tests green. The estimators are published methods; the contribution is the benchmark and the honest testbed.*
