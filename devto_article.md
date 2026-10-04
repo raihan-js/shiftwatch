@@ -1,4 +1,4 @@
-![shiftwatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/main/images/shiftwatch.png)
+![shiftwatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/HEAD/images/shiftwatch.png)
 
 # How Accurate Is Your Model Right Now? Estimating Accuracy Without Labels
 
@@ -8,7 +8,7 @@
 
 > Scope note: two intent-classification datasets (Banking77, CLINC150), one ModernBERT-base classifier each, rule-based shift ladder. No vision, no NLU, no frontier models.
 
-![ShiftWatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/main/images/shiftwatch.png)
+![ShiftWatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/HEAD/images/shiftwatch.png)
 
 ## The problem
 
@@ -18,7 +18,7 @@ The production question is: **what is my accuracy right now, with no labels?**
 
 ## The estimators
 
-Six published methods, all sharing one contract: fit on labelled source-validation logits once, then estimate on shifted data with labels withheld.
+Six published methods (plus an MLP variant of the error predictor, which is why the result tables have seven rows), all sharing one contract: fit on labelled source-validation logits once, then estimate on shifted data with labels withheld.
 
 | Estimator | Source | Key idea |
 |---|---|---|
@@ -46,6 +46,8 @@ Labels are written to a separate holdback file. The benchmark runner reads them 
 
 Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
 
+**Reading the columns.** MAE is the mean absolute gap between estimated and true accuracy over the 24 slices. *Detect* is the share of slices with a true accuracy drop of at least 5 points that the estimator also flagged (estimated drop of at least 5 points). *False Alarm* is the share of the other slices it flagged anyway. Both use the 5-point threshold the sidecar defaults to.
+
 ### Banking77 (77 classes, clean accuracy 92.7%)
 
 | Estimator | MAE | Bias | Detect | False Alarm |
@@ -72,9 +74,9 @@ Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
 
 ### The headline
 
-**No single estimator dominates.** Mean confidence wins on Banking77 (well-calibrated, no OOS); the learned error predictor wins on CLINC150 (OOS contamination). DoC and CBPE fail to detect drops on both datasets — they are too optimistic under shift.
+**No single estimator dominates.** On Banking77 temperature scaling and mean confidence are tied (MAE 0.0109 vs 0.0110, within noise of each other); on CLINC150, where out-of-scope contamination breaks calibration, the MLP error predictor leads (0.0101, with NLL at 0.0110). DoC and CBPE fail to detect drops on both datasets: they are too optimistic under shift.
 
-The practical takeaway: **fit the error predictor on your own source data**. It costs one labelled validation set and a logistic regression, and it adapts to your model's failure modes. Mean confidence is a strong baseline when the model is well-calibrated, but it breaks under OOS contamination.
+The practical takeaway: **fit the error predictor on your own source data**. It costs one labelled validation set and a logistic regression, it is in the top three on both datasets with no false alarms, and it adapts to your model's failure modes. Mean confidence is a strong baseline when the model is well-calibrated, but it degrades under OOS contamination (MAE 0.0234 on CLINC150, detecting half the drops).
 
 ## The sidecar
 
@@ -85,8 +87,10 @@ A small FastAPI service that:
 - Exports Prometheus gauges and an alert flag
 
 ```bash
-shiftwatch serve --dataset clinc150 --estimator cbpe
+shiftwatch serve --dataset clinc150 --estimator error_predictor
 ```
+
+`error_predictor` is the sidecar's default. (It used to default to `cbpe`, which never detected a drop in this benchmark; the benchmark is what caught that.)
 
 ## Limitations
 
@@ -97,4 +101,4 @@ shiftwatch serve --dataset clinc150 --estimator cbpe
 
 ---
 
-*Repo: github.com/raihan-js/shiftwatch · 89 tests green. The estimators are published methods; the contribution is the benchmark and the honest testbed.*
+*Repo: github.com/raihan-js/shiftwatch · 96 tests green. The estimators are published methods; the contribution is the benchmark and the honest testbed.*

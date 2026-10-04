@@ -76,7 +76,7 @@ def main() -> int:
 
     s = sub.add_parser("serve", help="run the monitoring sidecar")
     s.add_argument("--dataset", default="clinc150")
-    s.add_argument("--estimator", default="cbpe")
+    s.add_argument("--estimator", default="error_predictor")
     s.add_argument("--window", type=int, default=500)
     s.add_argument("--threshold", type=float, default=0.05)
     s.add_argument("--host", default="127.0.0.1")
@@ -85,7 +85,7 @@ def main() -> int:
 
     r = sub.add_parser("replay", help="stream ladder slices through the estimator")
     r.add_argument("--dataset", default="clinc150")
-    r.add_argument("--estimator", default="cbpe")
+    r.add_argument("--estimator", default="error_predictor")
     r.add_argument("--slices", nargs="*", default=None)
     r.add_argument("--window", type=int, default=500)
     r.add_argument("--threshold", type=float, default=0.05)

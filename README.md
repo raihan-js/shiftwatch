@@ -2,13 +2,15 @@
 
 Estimate a deployed classifier's accuracy after a data shift, before any labels arrive.
 
+![ShiftWatch results](images/shiftwatch.png)
+
 ## The problem
 
 Drift dashboards alert on input statistics that don't track failure. The production question is: **what is my accuracy right now, with no labels?**
 
 ## The approach
 
-Benchmark six label-free accuracy estimators on a controlled shift ladder:
+Benchmark six label-free accuracy estimators (plus an MLP variant of the error predictor, so results show seven rows) on a controlled shift ladder:
 
 | Estimator | Source | Key idea |
 |---|---|---|
@@ -44,6 +46,8 @@ A small FastAPI service that:
 
 Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
 
+**Reading the columns.** MAE is the mean absolute gap between estimated and true accuracy over the 24 slices. *Detect* is the share of slices with a true accuracy drop of at least 5 points that the estimator also flagged (estimated drop of at least 5 points). *False Alarm* is the share of the other slices it flagged anyway. Both use the 5-point threshold the sidecar defaults to.
+
 ### Banking77 (77 classes, clean accuracy 92.7%)
 
 | Estimator | MAE | Bias | Detect | False Alarm |
@@ -70,7 +74,7 @@ Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
 
 ### Key finding
 
-**No single estimator dominates.** Mean confidence wins on Banking77 (well-calibrated, no OOS); the learned error predictor wins on CLINC150 (OOS contamination). DoC and CBPE fail to detect drops on both datasets — they are too optimistic under shift.
+**No single estimator dominates.** On Banking77 temperature scaling and mean confidence are tied (MAE 0.0109 vs 0.0110, within noise of each other); on CLINC150, where out-of-scope contamination breaks calibration, the MLP error predictor leads (0.0101, with NLL at 0.0110). DoC and CBPE fail to detect drops on both datasets: they are too optimistic under shift.
 
 ## Estimator notes
 
@@ -94,8 +98,10 @@ PYTHONPATH=src python scripts/build_ladder.py --dataset banking77
 PYTHONPATH=src python scripts/run_benchmark.py --dataset banking77
 
 # Serve
-shiftwatch serve --dataset clinc150 --estimator cbpe
+shiftwatch serve --dataset clinc150 --estimator error_predictor
 ```
+
+The sidecar defaults to `error_predictor`: top three on both datasets with no false alarms. (An earlier default, `cbpe`, never detected a drop in this benchmark.)
 
 ## Limitations
 
