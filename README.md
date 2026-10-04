@@ -46,7 +46,7 @@ A small FastAPI service that:
 
 Two datasets, 24 slices total (1,000 items each), ModernBERT-base classifiers.
 
-**Reading the columns.** MAE is the mean absolute gap between estimated and true accuracy over the 24 slices. *Detect* is the share of slices with a true accuracy drop of at least 5 points that the estimator also flagged (estimated drop of at least 5 points). *False Alarm* is the share of the other slices it flagged anyway. Both use the 5-point threshold the sidecar defaults to.
+**Reading the columns.** MAE is the mean absolute gap between estimated and true accuracy over the 24 slices. *Detect* is the share of slices with a true accuracy drop of at least 5 points that the estimator also flagged (estimated drop of at least 5 points). *False Alarm* is the share of the other slices it flagged anyway. Both use the 5-point threshold the sidecar defaults to. These rates rest on small counts: in each dataset 6 slices have a true drop of at least 5 points, so a detect rate of 0.83 is 5 of 6, and Banking77's false-alarm rate of 0.25 is 1 of 4 non-drop slices.
 
 ### Banking77 (77 classes, clean accuracy 92.7%)
 
