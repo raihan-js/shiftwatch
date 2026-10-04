@@ -4,6 +4,8 @@ Estimate a deployed classifier's accuracy after a data shift, before any labels 
 
 ![ShiftWatch results](images/shiftwatch.png)
 
+Write-up: [How Accurate Is Your Model Right Now? Estimating Accuracy Without Labels](https://dev.to/raihan-js/how-accurate-is-your-model-right-now-estimating-accuracy-without-labels-59kp)
+
 ## The problem
 
 Drift dashboards alert on input statistics that don't track failure. The production question is: **what is my accuracy right now, with no labels?**
