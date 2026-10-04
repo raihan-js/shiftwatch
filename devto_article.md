@@ -8,8 +8,6 @@
 
 > Scope note: two intent-classification datasets (Banking77, CLINC150), one ModernBERT-base classifier each, rule-based shift ladder. No vision, no NLU, no frontier models.
 
-![ShiftWatch results](https://raw.githubusercontent.com/raihan-js/shiftwatch/HEAD/images/shiftwatch.png)
-
 ## The problem
 
 Your model was 91% accurate in validation. Three months later, nobody knows what it is. Labels are expensive, slow, and often weeks away. Drift dashboards show you input statistics moved — but that doesn't tell you if the model is still good.
